@@ -1,0 +1,8 @@
+# build
+build/
+*.o
+infinite-chain
+
+# editor
+*.swp
+*.swo
