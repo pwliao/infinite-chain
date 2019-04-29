@@ -92,7 +92,7 @@ Blockchain::Blockchain(string target)
 int Blockchain::getBlockCount()
 {
 	string latest_block;
-	db->Get(leveldb::ReadOptions(), "block_hash", &latest_block);
+	db->Get(leveldb::ReadOptions(), "latest_block", &latest_block);
 	return stoi(latest_block);
 }
 
@@ -108,7 +108,7 @@ void Blockchain::addBlock(Block block)
 	int latest_block = getBlockCount();
 	if (block.height > latest_block) {
 		db->Put(leveldb::WriteOptions(), "latest_block", to_string(block.height));
-		db->Put(leveldb::WriteOptions(), "latest_block_hash", to_string(block.height));
+		db->Put(leveldb::WriteOptions(), "latest_block_hash", block.headers.hash());
 	}
 	db->Put(leveldb::WriteOptions(), block_hash, block.serialize());
 }
