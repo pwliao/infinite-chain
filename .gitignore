@@ -1,8 +1,10 @@
 # build
 build/
+cmake-build-debug
 *.o
 infinite-chain
 
 # editor
 *.swp
 *.swo
+.idea/

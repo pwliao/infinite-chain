@@ -6,6 +6,7 @@
 #include "rpc.hpp"
 #include "blockchain.hpp"
 #include "json.hpp"
+#include "transaction.hpp"
 
 using json = nlohmann::json;
 using namespace std;
