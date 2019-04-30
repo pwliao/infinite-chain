@@ -1,4 +1,5 @@
 #include "blockchain.hpp"
+#include "transaction.hpp"
 #include <cstdlib>
 #include <string>
 #include <sstream>
@@ -6,7 +7,9 @@
 #include <iomanip>
 #include <openssl/sha.h>
 #include <leveldb/db.h>
+#include "json.hpp"
 
+using json = nlohmann::json;
 using namespace std;
 
 BlockHeaders::BlockHeaders()
@@ -52,18 +55,23 @@ string BlockHeaders::hash()
 	SHA256_Update(&sha256, str.c_str(), str.size());
 	SHA256_Final(hash, &sha256);
 	stringstream ss;
-	for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-		ss << hex << setw(2) << setfill('0') << (int)hash[i];
+	for (unsigned char i : hash) {
+		ss << hex << setw(2) << setfill('0') << (int)i;
 	}
 	return ss.str();
 }
 
 Block::Block(string serialized_block)
 {
-	string headers_str;
-	stringstream ss(serialized_block);
-	ss >> headers_str >> height;
-	headers = BlockHeaders(headers_str);
+	json j = json::parse(serialized_block);
+	json data = j["data"];
+	headers.version = data["version"];
+	headers.previous_hash = data["prev_block"];
+	headers.merkle_root_hash = data["merkle_root"];
+	headers.beneficiary = data["beneficiary"];
+	headers.target = data["target"];
+	headers.nonce = data["nonce"];
+	height = j["height"];
 }
 
 string Block::getMerkleRoot()
@@ -73,7 +81,29 @@ string Block::getMerkleRoot()
 
 string Block::serialize()
 {
-	return headers.serialize() + " " + to_string(height);
+	json serialized_block;
+	serialized_block["data"] = json::object();
+	serialized_block["data"] = {{"version", headers.version}, {"prev_block", headers.previous_hash},
+		{"merkle_root", headers.merkle_root_hash}, {"beneficiary", headers.beneficiary},
+		{"target", headers.target}, {"nonce", headers.nonce}};
+	serialized_block["data"]["transaction"] = json::array();
+	serialized_block["height"] = height;
+	return serialized_block.dump();
+}
+
+bool Block::isValid(const string &target)
+{
+	if (headers.version != 2) {
+		return false;
+	}
+	if (headers.target != target) {
+		return false;
+	}
+	// TODO check transactions
+	if (headers.hash() > target) {
+		return false;
+	}
+	return true;
 }
 
 Blockchain::Blockchain(string target)
@@ -94,11 +124,6 @@ int Blockchain::getBlockCount()
 	string latest_block;
 	db->Get(leveldb::ReadOptions(), "latest_block", &latest_block);
 	return stoi(latest_block);
-}
-
-string Blockchain::getBlockHash(int block_height)
-{
-	return "0";
 }
 
 void Blockchain::addBlock(Block block)
@@ -130,11 +155,16 @@ void Blockchain::mining()
 		block.headers = BlockHeaders(1, latest_block_hash,
 				block.getMerkleRoot(), target, nonce);
 		block.height = getBlock(block.headers.previous_hash).height + 1;
-		if (block.headers.hash() <= target) {
-			cerr << "new block" << endl;
-			addBlock(block);
+		int T = 10000;
+		while (T--) {
+			block.headers.nonce = nonce;
+			if (block.headers.hash() <= target) {
+				cerr << "new block" << endl;
+				addBlock(block);
+				break;
+			}
+			nonce++;
 		}
-		nonce++;
 	}
 }
 
@@ -142,6 +172,6 @@ void Blockchain::initDb()
 {
 	leveldb::Options options;
 	options.create_if_missing = true;
-	status = leveldb::DB::Open(options, "db", &db);
+	leveldb::Status status = leveldb::DB::Open(options, "db", &db);
 	assert(status.ok());
 }

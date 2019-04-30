@@ -15,7 +15,7 @@ json readConfig()
 {
 	string line;
 	ifstream file("config.json");
-	string json_str = "";
+	string json_str;
 	if (file.is_open()) {
 		while (getline(file, line)) {
 			json_str += line;
@@ -29,10 +29,13 @@ int main()
 {
 	json config = readConfig();
 	Blockchain blockchain(config["target"]);
-	RpcServer rpcserver;
-	thread rpc(&RpcServer::run, &rpcserver, ref(blockchain));
+	UserApi userapi;
+	P2PApi p2papi;
+	thread user(&RpcServer::run, &userapi, ref(blockchain), config["user_port"]);
+	thread p2p(&RpcServer::run, &p2papi, ref(blockchain), config["p2p_port"]);
 	printf("rpc start\n");
 	blockchain.mining();
-	rpc.join();
+	user.join();
+	p2p.join();
 	return 0;
 }

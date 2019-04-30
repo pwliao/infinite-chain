@@ -11,20 +11,13 @@
 #include "rpc.hpp"
 #include "json.hpp"
 
-#include <iostream>
-
 using json = nlohmann::json;
 using namespace std;
 
-RpcServer::RpcServer()
-{
-}
-
-void RpcServer::run(Blockchain &blockchain)
+void RpcServer::run(Blockchain &blockchain, int port)
 {
 	char input_buffer[256] = {};
 	int server_fd = 0, client_fd = 0;
-
 	server_fd = socket(PF_INET, SOCK_STREAM, 0);
 	if (server_fd == -1) {
 		printf("socket() error\n");
@@ -34,8 +27,7 @@ void RpcServer::run(Blockchain &blockchain)
 	memset(&server_addr, 0, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = INADDR_ANY;
-	server_addr.sin_port = htons(10000);
-
+	server_addr.sin_port = htons(port);
 	if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
 		printf("bind error\n");
 		exit(1);
@@ -48,7 +40,6 @@ void RpcServer::run(Blockchain &blockchain)
 	FD_ZERO(&reads);
 	FD_SET(server_fd, &reads);
 	int fd_max = server_fd;
-
 	while (1) {
 		copy_reads = reads;
 		int fd_num = select(fd_max + 1, &copy_reads, 0, 0, 0);
@@ -91,7 +82,7 @@ void RpcServer::run(Blockchain &blockchain)
 	}
 }
 
-string RpcServer::getResponse(string message, Blockchain &blockchain)
+string UserApi::getResponse(string message, Blockchain &blockchain)
 {
 	try {
 		json j = json::parse(message);
@@ -101,14 +92,29 @@ string RpcServer::getResponse(string message, Blockchain &blockchain)
 			response["result"] = blockchain.getBlockCount();
 			return response.dump();
 		} else if (method == "getBlockHash") {
-			json response;
-			response["result"] = blockchain.getBlockHash(j["block_height"]);
-			return response.dump();
 		} else if (method == "getBlockHeader") {
-
+		} else if (method == "getbalance") {
 		}
 	} catch (exception &e) {
-		cerr << e.what() << endl;
+		fprintf(stderr, "%s\n", e.what());
+		fprintf(stderr, "getResponse error\n");
+	}
+	return "";
+}
+
+string P2PApi::getResponse(string message, Blockchain &blockchain)
+{
+
+	try {
+		json j = json::parse(message);
+		string method = j["method"];
+		if (method == "sendBlock") {
+			blockchain.addBlock(Block(j["data"].dump()));
+		} else if (method == "getBlocks") {
+		} else if (method == "sendTransaction") {
+		}
+	} catch (exception &e) {
+		fprintf(stderr, "%s\n", e.what());
 		fprintf(stderr, "getResponse error\n");
 	}
 	return "";

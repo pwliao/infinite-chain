@@ -3,7 +3,8 @@
 
 #include <cstdint>
 #include <string>
-#include <map>
+#include <vector>
+#include "transaction.hpp"
 #include <leveldb/db.h>
 
 struct BlockHeaders {
@@ -11,6 +12,7 @@ struct BlockHeaders {
 	std::string previous_hash;
 	std::string merkle_root_hash;
 	std::string target;
+	std::string beneficiary;
 	uint32_t nonce;
 	BlockHeaders();
 	BlockHeaders(uint32_t, std::string, std::string, std::string, uint32_t);
@@ -20,22 +22,23 @@ struct BlockHeaders {
 };
 
 struct Block {
-	BlockHeaders headers;
-	int height;
 	Block() {}
 	Block(std::string serialized_block);
 	std::string getMerkleRoot();
 	std::string serialize();
+	bool isValid(const std::string &target);
+
+	BlockHeaders headers;
+	int height;
+	std::vector<Transaction> txs;
 };
 
 struct Blockchain {
 	std::string target;
 	leveldb::DB* db;
-	leveldb::Status status;
 	Blockchain() {}
 	Blockchain(std::string target);
 	int getBlockCount();
-	std::string getBlockHash(int block_height);
 	void addBlock(Block block);
 	Block getBlock(std::string block_hash);
 	void mining();

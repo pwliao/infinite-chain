@@ -7,10 +7,22 @@
 class RpcServer
 {
 public:
-	RpcServer();
-	void run(Blockchain &blockchain);
-	std::string getResponse(std::string message, Blockchain &blockchain);
+	RpcServer() = default;
+	void run(Blockchain &blockchain, int port);
+	virtual std::string getResponse(std::string message, Blockchain &blockchain) = 0;
 private:
+};
+
+class UserApi: public RpcServer
+{
+public:
+	std::string getResponse(std::string message, Blockchain &blockchain) override;
+};
+
+class P2PApi: public RpcServer
+{
+public:
+	std::string getResponse(std::string message, Blockchain &blockchain) override;
 };
 
 #endif
