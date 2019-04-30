@@ -3,7 +3,7 @@
 #include <thread>
 #include <iostream>
 #include <fstream>
-#include "rpc.hpp"
+#include "api.hpp"
 #include "blockchain.hpp"
 #include "json.hpp"
 #include "transaction.hpp"
@@ -31,9 +31,9 @@ int main()
 	Blockchain blockchain(config["target"]);
 	UserApi userapi;
 	P2PApi p2papi;
-	thread user(&RpcServer::run, &userapi, ref(blockchain), config["user_port"]);
-	thread p2p(&RpcServer::run, &p2papi, ref(blockchain), config["p2p_port"]);
-	printf("rpc start\n");
+	thread user(&APIServer::run, &userapi, ref(blockchain), config["user_port"]);
+	thread p2p(&APIServer::run, &p2papi, ref(blockchain), config["p2p_port"]);
+	printf("api server start\n");
 	blockchain.mining();
 	user.join();
 	p2p.join();

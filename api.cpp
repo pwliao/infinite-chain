@@ -8,13 +8,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "blockchain.hpp"
-#include "rpc.hpp"
+#include "api.hpp"
 #include "json.hpp"
 
 using json = nlohmann::json;
 using namespace std;
 
-void RpcServer::run(Blockchain &blockchain, int port)
+void APIServer::run(Blockchain &blockchain, int port)
 {
 	char input_buffer[256] = {};
 	int server_fd = 0, client_fd = 0;

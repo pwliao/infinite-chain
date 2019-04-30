@@ -4,22 +4,22 @@
 #include <string>
 #include "blockchain.hpp"
 
-class RpcServer
+class APIServer
 {
 public:
-	RpcServer() = default;
+	APIServer() = default;
 	void run(Blockchain &blockchain, int port);
 	virtual std::string getResponse(std::string message, Blockchain &blockchain) = 0;
 private:
 };
 
-class UserApi: public RpcServer
+class UserApi: public APIServer
 {
 public:
 	std::string getResponse(std::string message, Blockchain &blockchain) override;
 };
 
-class P2PApi: public RpcServer
+class P2PApi: public APIServer
 {
 public:
 	std::string getResponse(std::string message, Blockchain &blockchain) override;
