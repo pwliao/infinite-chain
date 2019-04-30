@@ -93,6 +93,9 @@ string Block::serialize()
 		{"target", headers.target}, {"nonce", headers.nonce}};
 	serialized_block["data"]["transaction"] = json::array();
 	serialized_block["height"] = height;
+	for (auto &tx : txs) {
+		serialized_block["data"]["transaction"].push_back(tx.serialize());
+	}
 	return serialized_block.dump();
 }
 
@@ -125,8 +128,12 @@ Blockchain::Blockchain(string target)
 	initDb();
 	string zero = "0000000000000000000000000000000000000000000000000000000000000000";
 	this->target = target;
-	db->Put(leveldb::WriteOptions(), "latest_block_hash", zero);
-	db->Put(leveldb::WriteOptions(), "latest_block", "-1");
+	string latest_block;
+	leveldb::Status status = db->Get(leveldb::ReadOptions(), "latest_block", &latest_block);
+	if (!status.ok()) {
+		db->Put(leveldb::WriteOptions(), "latest_block_hash", zero);
+		db->Put(leveldb::WriteOptions(), "latest_block", "-1");
+	}
 	Block block;
 	block.height = -1;
 	block.headers = BlockHeaders(1, zero, zero, target, 0);
@@ -159,6 +166,12 @@ Block Blockchain::getBlock(string block_hash)
 	return Block(serialized_block);
 }
 
+void Blockchain::broadcastBlock(Block block)
+{
+	json message = json::parse(block.serialize());
+	message["method"] = "sendBlock";
+	neighbors.broadcast(message.dump());
+}
 void Blockchain::mining()
 {
 	uint32_t nonce = 0;
@@ -192,4 +205,13 @@ void Blockchain::initDb()
 
 unsigned int Blockchain::getBalance(std::string address) {
     return 0;
+}
+
+Block Blockchain::getLatestBlock()
+{
+	string latest_block_hash;
+	db->Get(leveldb::ReadOptions(), "latest_block_hash", &latest_block_hash);
+	string serialized_block;
+	db->Get(leveldb::ReadOptions(), latest_block_hash, &serialized_block);
+	return Block(serialized_block);
 }

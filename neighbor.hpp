@@ -5,15 +5,16 @@
 #include <vector>
 
 struct Neighbor {
-   string ip;
-   int port;
+	std::string ip;
+	int port;
 };
 
 class Neighbors {
 public:
-    void broadcast(std::string message);
+	void broadcast(std::string message);
+	void addNeighbor(Neighbor neighbor);
 private:
-    std::vector<Neighbor> neighbors
+	std::vector<Neighbor> neighbors;
 };
 
 #endif //INF_SERVER_NEIGHBOR_H

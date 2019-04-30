@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "transaction.hpp"
+#include "neighbor.hpp"
 #include <leveldb/db.h>
 #include <map>
 
@@ -39,13 +40,16 @@ struct Block {
 struct Blockchain {
 	std::string target;
 	leveldb::DB* db;
+	Neighbors neighbors;
 	Blockchain() {}
 	Blockchain(std::string target);
 	int getBlockCount();
 	void addBlock(Block block);
 	Block getBlock(std::string block_hash);
+	void broadcastBlock(Block block);
 	void mining();
 	void initDb();
 	unsigned int getBalance(std::string address);
+	Block getLatestBlock();
 };
 #endif
