@@ -6,11 +6,12 @@
 #include <vector>
 #include "transaction.hpp"
 #include <leveldb/db.h>
+#include <map>
 
 struct BlockHeaders {
 	uint32_t version;
 	std::string previous_hash;
-	std::string merkle_root_hash;
+	std::string transactions_hash;
 	std::string target;
 	std::string beneficiary;
 	uint32_t nonce;
@@ -27,10 +28,12 @@ struct Block {
 	std::string getMerkleRoot();
 	std::string serialize();
 	bool isValid(const std::string &target);
+	bool countWorldState(struct Blockchain &blockchain);
 
 	BlockHeaders headers;
 	int height;
 	std::vector<Transaction> txs;
+    std::map<std::string, uint64_t> world_state;
 };
 
 struct Blockchain {

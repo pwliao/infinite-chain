@@ -109,7 +109,7 @@ string P2PApi::getResponse(string message, Blockchain &blockchain)
 		json j = json::parse(message);
 		string method = j["method"];
 		if (method == "sendBlock") {
-			blockchain.addBlock(Block(j["data"].dump()));
+			blockchain.addBlock(message);
 		} else if (method == "getBlocks") {
 		} else if (method == "sendTransaction") {
 		}

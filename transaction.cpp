@@ -6,7 +6,9 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include "json.hpp"
 
+using json = nlohmann::json;
 using namespace std;
 
 const struct uECC_Curve_t* curve = uECC_secp256k1();
@@ -91,4 +93,14 @@ bool Transaction::validate() {
     hex_to_char(this->signature, sig, 64);
 
     return uECC_verify(pub_key, hash, sizeof(hash), sig, curve);
+}
+
+Transaction::Transaction(std::string serialized_transaction) {
+    json tx = json::parse(serialized_transaction);
+    this->nonce = tx["nonce"];
+    this->sender_pub_key = tx["sender_pub_key"];
+    this->to = tx["to"];
+    this->value = tx["value"];
+    this->fee = tx["fee"];
+    this->signature = tx["signature"];
 }

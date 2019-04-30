@@ -15,7 +15,7 @@ public:
 	std::string serialize();
 	std::string sign(std::string private_key); // 其它欄位都搞定的狀況下填入 signature
 	bool validate();
-private:
+
     void partial_hash(unsigned char *hash);
 	uint64_t nonce;
 	std::string sender_pub_key;

@@ -20,17 +20,17 @@ BlockHeaders::BlockHeaders(string serialized_headers)
 {
 	this->version = stoi(serialized_headers.substr(0, 8), nullptr, 16);
 	this->previous_hash = serialized_headers.substr(8, 64);
-	this->merkle_root_hash = serialized_headers.substr(72, 64);
+	this->transactions_hash = serialized_headers.substr(72, 64);
 	this->target = serialized_headers.substr(136, 64);
 	this->nonce = stoi(serialized_headers.substr(200, 8), nullptr, 16);
 }
 
 BlockHeaders::BlockHeaders(uint32_t version, string previous_hash,
-		string merkle_root_hash, string target, uint32_t nonce)
+		string transactions_hash, string target, uint32_t nonce)
 {
 	this->version = version;
 	this->previous_hash = previous_hash;
-	this->merkle_root_hash = merkle_root_hash;
+	this->transactions_hash = transactions_hash;
 	this->target = target;
 	this->nonce = nonce;
 }
@@ -40,7 +40,7 @@ string BlockHeaders::serialize()
 	stringstream ss;
 	ss << hex << setw(8) << setfill('0') << version;
 	ss << previous_hash;
-	ss << merkle_root_hash;
+	ss << transactions_hash;
 	ss << target;
 	ss << hex << setw(8) << setfill('0') << nonce;
 	return ss.str();
@@ -67,11 +67,16 @@ Block::Block(string serialized_block)
 	json data = j["data"];
 	headers.version = data["version"];
 	headers.previous_hash = data["prev_block"];
-	headers.merkle_root_hash = data["merkle_root"];
+	headers.transactions_hash = data["transactions_hash"];
 	headers.beneficiary = data["beneficiary"];
 	headers.target = data["target"];
 	headers.nonce = data["nonce"];
 	height = j["height"];
+
+	for (auto &tx_json: data["transactions"]) {
+	    Transaction tx(tx_json.dump());
+	    txs.push_back(tx);
+	}
 }
 
 string Block::getMerkleRoot()
@@ -84,7 +89,7 @@ string Block::serialize()
 	json serialized_block;
 	serialized_block["data"] = json::object();
 	serialized_block["data"] = {{"version", headers.version}, {"prev_block", headers.previous_hash},
-		{"merkle_root", headers.merkle_root_hash}, {"beneficiary", headers.beneficiary},
+		{"transactions_hash", headers.transactions_hash}, {"beneficiary", headers.beneficiary},
 		{"target", headers.target}, {"nonce", headers.nonce}};
 	serialized_block["data"]["transaction"] = json::array();
 	serialized_block["height"] = height;
@@ -104,6 +109,15 @@ bool Block::isValid(const string &target)
 		return false;
 	}
 	return true;
+}
+
+bool Block::countWorldState(struct Blockchain &blockchain) {
+//    Block previous_block = blockchain.getBlock(this->headers.previous_hash);
+//    map<string, uint64_t> world_state =
+//    for (auto &tx: this->txs) {
+//
+//    }
+    return false;
 }
 
 Blockchain::Blockchain(string target)
@@ -174,4 +188,8 @@ void Blockchain::initDb()
 	options.create_if_missing = true;
 	leveldb::Status status = leveldb::DB::Open(options, "db", &db);
 	assert(status.ok());
+}
+
+unsigned int Blockchain::getBalance(std::string address) {
+    return 0;
 }
