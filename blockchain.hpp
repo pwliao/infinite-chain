@@ -43,5 +43,6 @@ struct Blockchain {
 	Block getBlock(std::string block_hash);
 	void mining();
 	void initDb();
+	unsigned int getBalance(std::string address);
 };
 #endif
