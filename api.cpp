@@ -71,7 +71,6 @@ void APIServer::run(Blockchain &blockchain, int port)
 						close(i);
 						fprintf(stderr, "close connection\n");
 					} else {
-						fprintf(stderr, "Get %s#\n", input_buffer);
 						string ret = getResponse(input_buffer, blockchain);
 						ret += "\n";
 						write(i, ret.c_str(), ret.length());
@@ -98,6 +97,11 @@ string UserApi::getResponse(string message, Blockchain &blockchain)
 		    response["error"] = "";
 		    response["balance"] = blockchain.getBalance(j["data"]["address"]);
 		    return response.dump();
+		} else if (method == "sendtoaddress") {
+		    blockchain.sendToAddress(j["data"]["address"], j["data"]["amount"]);
+            json response;
+            response["error"] = "";
+            return response.dump();
 		}
 	} catch (exception &e) {
 		fprintf(stderr, "%s\n", e.what());

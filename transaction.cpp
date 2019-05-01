@@ -58,11 +58,6 @@ string Transaction::sign(std::string private_key) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     this->partial_hash(hash);
 
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-        cout << hex << setw(2) << setfill('0') << (int)hash[i];
-    }
-    cout << endl;
-
     uint8_t pri_key[32] = {0};
     uint8_t pub_key[64] = {0};
     uint8_t sig[64] = {0};

@@ -1,6 +1,7 @@
 #include "blockchain.hpp"
 #include "transaction.hpp"
 #include <cstdlib>
+#include <cstdio>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -120,20 +121,34 @@ bool Block::isValid(const string &target)
 bool Block::countWorldState(struct Blockchain &blockchain) {
     Block previous_block = blockchain.getBlock(this->headers.previous_hash);
     map<string, uint64_t> world_state = previous_block.world_state;
+    set<string> all_txs = previous_block.all_txs;
 
+    cout << "==================== start count world state =========================" << endl;
+    cout << "交易數量：" << this->txs.size() << endl;
     uint64_t all_fee = 0;
     for (auto &tx: this->txs) {
-        if (world_state[tx.sender_pub_key] >= (tx.fee + tx.value)) {
+        if ( all_txs.find(tx.signature) == all_txs.end() &&
+             world_state[tx.sender_pub_key] >= (tx.fee + tx.value) ) {
+
             all_fee += tx.fee;
             world_state[tx.sender_pub_key] -= (tx.fee + tx.value);
+            cout << tx.sender_pub_key << " 減少 " << (tx.fee + tx.value) << endl;
             world_state[tx.to] += tx.value;
+            cout << tx.to << " 增加 " << ( tx.value) << endl;
+
+            all_txs.insert(tx.signature);
+
         } else {
+            cout << "==================== fail count world state =========================" << endl;
             return false;
         }
     }
     // TODO: 將 1000 放到 config.json 或是其他專門放常數的檔案
     world_state[this->headers.beneficiary] += (1000 + all_fee);
+    cout << this->headers.beneficiary << " 礦工獲得手續費 " << all_fee << " 以及挖礦獎勵 " << 1000 << endl;
     this->world_state = world_state;
+    this->all_txs = all_txs;
+    cout << "==================== end count world state =========================" << endl;
     return true;
 }
 
@@ -143,11 +158,16 @@ Blockchain::Blockchain(json config)
 	string zero = "0000000000000000000000000000000000000000000000000000000000000000";
 	this->target = config["target"];
 	this->beneficiary = config["beneficiary"];
+	this->public_key = config["wallet"]["public_key"];
+    this->private_key = config["wallet"]["private_key"];
+    this->fee = config["fee"];
+
 	string latest_block;
 	leveldb::Status status = db->Get(leveldb::ReadOptions(), "latest_block", &latest_block);
 	if (!status.ok()) {
 		db->Put(leveldb::WriteOptions(), "latest_block_hash", zero);
 		db->Put(leveldb::WriteOptions(), "latest_block", "-1");
+        db->Put(leveldb::WriteOptions(), "nonce", "0");
 	}
 	Block block;
 	block.height = -1;
@@ -207,9 +227,32 @@ void Blockchain::mining()
 		Block block;
 		string latest_block_hash;
 		db->Get(leveldb::ReadOptions(), "latest_block_hash", &latest_block_hash);
-		block.headers = BlockHeaders(1, latest_block_hash,
+        Block previous_block = this->getLatestBlock();
+		block.headers = BlockHeaders(2, latest_block_hash,
 				block.getMerkleRoot(), target, beneficiary, nonce);
-		block.height = getBlock(block.headers.previous_hash).height + 1;
+		block.height = previous_block.height + 1;
+
+//		加入交易
+		auto world_state = previous_block.world_state;
+        auto all_txs = previous_block.all_txs;
+		for (Transaction tx: this->transaction_pool) {
+            if (all_txs.find(tx.signature) == all_txs.end() &&
+                world_state[tx.sender_pub_key] >= (tx.fee + tx.value)) {
+
+//                cout << "tx: to " << tx.to << ", amount " << unsigned(tx.value) << endl;
+
+                world_state[tx.sender_pub_key] -= (tx.fee + tx.value);
+                world_state[tx.to] += tx.value;
+
+//                cout << "sender: " << world_state[tx.sender_pub_key] << endl;
+//                cout << "receiver: " << world_state[tx.to] << endl;
+
+                all_txs.insert(tx.signature);
+                block.txs.push_back(tx);
+
+            }
+		}
+
 		int T = 10000;
 		while (T--) {
 			block.headers.nonce = nonce;
@@ -259,4 +302,15 @@ void Blockchain::showWorldState() {
     for (auto s: world_state) {
         cout << "賬戶： " << s.first << ", 餘額: " << s.second << endl;
     }
+}
+
+void Blockchain::sendToAddress(std::string address, uint64_t amount) {
+    string nonce_str;
+    db->Get(leveldb::ReadOptions(), "nonce", &nonce_str);
+    int nonce = stoi(nonce_str);
+    db->Put(leveldb::WriteOptions(), "nonce", to_string(nonce + 1));
+    Transaction tx(nonce, this->public_key, address,
+            amount, this->fee);
+    tx.sign(this->private_key);
+    this->transaction_pool.push_back(tx);
 }
