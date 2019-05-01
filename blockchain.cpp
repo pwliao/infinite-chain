@@ -8,6 +8,8 @@
 #include <openssl/sha.h>
 #include <leveldb/db.h>
 #include "json.hpp"
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 
 using json = nlohmann::json;
 using namespace std;
@@ -137,7 +139,7 @@ Blockchain::Blockchain(string target)
 	Block block;
 	block.height = -1;
 	block.headers = BlockHeaders(1, zero, zero, target, 0);
-	db->Put(leveldb::WriteOptions(), zero, block.serialize());
+	saveBlock(zero, block);
 }
 
 int Blockchain::getBlockCount()
@@ -156,14 +158,26 @@ void Blockchain::addBlock(Block block)
 		db->Put(leveldb::WriteOptions(), "latest_block", to_string(block.height));
 		db->Put(leveldb::WriteOptions(), "latest_block_hash", block.headers.hash());
 	}
-	db->Put(leveldb::WriteOptions(), block_hash, block.serialize());
+	saveBlock(block_hash, block);
 }
 
 Block Blockchain::getBlock(string block_hash)
 {
 	string serialized_block;
 	leveldb::Status s = db->Get(leveldb::ReadOptions(), block_hash, &serialized_block);
-	return Block(serialized_block);
+	Block block;
+	istringstream is(serialized_block);
+	boost::archive::binary_iarchive ia(is);
+	ia >> block;
+	return block;
+}
+
+void Blockchain::saveBlock(string block_hash, Block block)
+{
+	ostringstream os;
+	boost::archive::binary_oarchive oa(os);
+	oa << block;
+	db->Put(leveldb::WriteOptions(), block_hash, os.str());
 }
 
 void Blockchain::broadcastBlock(Block block)
@@ -172,6 +186,7 @@ void Blockchain::broadcastBlock(Block block)
 	message["method"] = "sendBlock";
 	neighbors.broadcast(message.dump());
 }
+
 void Blockchain::mining()
 {
 	uint32_t nonce = 0;
@@ -211,7 +226,5 @@ Block Blockchain::getLatestBlock()
 {
 	string latest_block_hash;
 	db->Get(leveldb::ReadOptions(), "latest_block_hash", &latest_block_hash);
-	string serialized_block;
-	db->Get(leveldb::ReadOptions(), latest_block_hash, &serialized_block);
-	return Block(serialized_block);
+	return getBlock(latest_block_hash);
 }

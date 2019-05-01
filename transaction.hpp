@@ -23,5 +23,16 @@ public:
 	uint64_t value;
 	uint64_t fee;
 	std::string signature;
+
+	template<class Archive>
+	void serialize(Archive& archive, unsigned int version)
+	{
+		archive & nonce;
+		archive & sender_pub_key;
+		archive & to;
+		archive & value;
+		archive & fee;
+		archive & signature;
+	}
 };
 #endif

@@ -8,6 +8,9 @@
 #include "neighbor.hpp"
 #include <leveldb/db.h>
 #include <map>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/string.hpp>
 
 struct BlockHeaders {
 	uint32_t version;
@@ -35,6 +38,19 @@ struct Block {
 	int height;
 	std::vector<Transaction> txs;
     std::map<std::string, uint64_t> world_state;
+	template<class Archive>
+	void serialize(Archive& archive, unsigned int version)
+	{
+		archive & headers.version;
+		archive & headers.previous_hash;
+		archive & headers.transactions_hash;
+		archive & headers.target;
+		archive & headers.beneficiary;
+		archive & headers.nonce;
+		archive & height;
+		archive & txs;
+		archive & world_state;
+	}
 };
 
 struct Blockchain {
@@ -45,6 +61,7 @@ struct Blockchain {
 	Blockchain(std::string target);
 	int getBlockCount();
 	void addBlock(Block block);
+	void saveBlock(std::string hash, Block block);
 	Block getBlock(std::string block_hash);
 	void broadcastBlock(Block block);
 	void mining();
