@@ -94,6 +94,10 @@ string UserApi::getResponse(string message, Blockchain &blockchain)
 		} else if (method == "getBlockHash") {
 		} else if (method == "getBlockHeader") {
 		} else if (method == "getbalance") {
+		    json response;
+		    response["error"] = "";
+		    response["balance"] = blockchain.getBalance(j["data"]["address"]);
+		    return response.dump();
 		}
 	} catch (exception &e) {
 		fprintf(stderr, "%s\n", e.what());

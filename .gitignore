@@ -8,3 +8,4 @@ infinite-chain
 *.swp
 *.swo
 .idea/
+.vscode/

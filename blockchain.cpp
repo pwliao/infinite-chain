@@ -28,12 +28,13 @@ BlockHeaders::BlockHeaders(string serialized_headers)
 }
 
 BlockHeaders::BlockHeaders(uint32_t version, string previous_hash,
-		string transactions_hash, string target, uint32_t nonce)
+		string transactions_hash, string target, string beneficiary, uint32_t nonce)
 {
 	this->version = version;
 	this->previous_hash = previous_hash;
 	this->transactions_hash = transactions_hash;
 	this->target = target;
+	this->beneficiary = beneficiary;
 	this->nonce = nonce;
 }
 
@@ -117,19 +118,31 @@ bool Block::isValid(const string &target)
 }
 
 bool Block::countWorldState(struct Blockchain &blockchain) {
-//    Block previous_block = blockchain.getBlock(this->headers.previous_hash);
-//    map<string, uint64_t> world_state =
-//    for (auto &tx: this->txs) {
-//
-//    }
-    return false;
+    Block previous_block = blockchain.getBlock(this->headers.previous_hash);
+    map<string, uint64_t> world_state = previous_block.world_state;
+
+    uint64_t all_fee = 0;
+    for (auto &tx: this->txs) {
+        if (world_state[tx.sender_pub_key] >= (tx.fee + tx.value)) {
+            all_fee += tx.fee;
+            world_state[tx.sender_pub_key] -= (tx.fee + tx.value);
+            world_state[tx.to] += tx.value;
+        } else {
+            return false;
+        }
+    }
+    // TODO: 將 1000 放到 config.json 或是其他專門放常數的檔案
+    world_state[this->headers.beneficiary] += (1000 + all_fee);
+    this->world_state = world_state;
+    return true;
 }
 
-Blockchain::Blockchain(string target)
+Blockchain::Blockchain(json config)
 {
 	initDb();
 	string zero = "0000000000000000000000000000000000000000000000000000000000000000";
-	this->target = target;
+	this->target = config["target"];
+	this->beneficiary = config["beneficiary"];
 	string latest_block;
 	leveldb::Status status = db->Get(leveldb::ReadOptions(), "latest_block", &latest_block);
 	if (!status.ok()) {
@@ -138,7 +151,7 @@ Blockchain::Blockchain(string target)
 	}
 	Block block;
 	block.height = -1;
-	block.headers = BlockHeaders(1, zero, zero, target, 0);
+	block.headers = BlockHeaders(1, zero, zero, this->target, this->beneficiary, 0);
 	saveBlock(zero, block);
 }
 
@@ -184,7 +197,7 @@ void Blockchain::broadcastBlock(Block block)
 {
 	json message = json::parse(block.serialize());
 	message["method"] = "sendBlock";
-	neighbors.broadcast(message.dump());
+	this->neighbors.broadcast(message.dump());
 }
 
 void Blockchain::mining()
@@ -195,14 +208,17 @@ void Blockchain::mining()
 		string latest_block_hash;
 		db->Get(leveldb::ReadOptions(), "latest_block_hash", &latest_block_hash);
 		block.headers = BlockHeaders(1, latest_block_hash,
-				block.getMerkleRoot(), target, nonce);
+				block.getMerkleRoot(), target, beneficiary, nonce);
 		block.height = getBlock(block.headers.previous_hash).height + 1;
 		int T = 10000;
 		while (T--) {
 			block.headers.nonce = nonce;
 			if (block.headers.hash() <= target) {
-				cerr << "new block" << endl;
-				addBlock(block);
+				cerr << "new block, height " << block.height << endl;
+//				this->broadcastBlock(block);
+				block.countWorldState(*this);
+                this->addBlock(block);
+                this->showWorldState();
 				break;
 			}
 			nonce++;
@@ -219,7 +235,11 @@ void Blockchain::initDb()
 }
 
 unsigned int Blockchain::getBalance(std::string address) {
-    return 0;
+    Block b = this->getLatestBlock();
+    b = this->getBlock(b.headers.previous_hash);
+    b = this->getBlock(b.headers.previous_hash);
+
+    return b.world_state[address];
 }
 
 Block Blockchain::getLatestBlock()
@@ -227,4 +247,16 @@ Block Blockchain::getLatestBlock()
 	string latest_block_hash;
 	db->Get(leveldb::ReadOptions(), "latest_block_hash", &latest_block_hash);
 	return getBlock(latest_block_hash);
+}
+
+void Blockchain::showWorldState() {
+    Block b = this->getLatestBlock();
+    b = this->getBlock(b.headers.previous_hash);
+    b = this->getBlock(b.headers.previous_hash);
+
+    cout << "show world state" << endl;
+    auto world_state = b.world_state;
+    for (auto s: world_state) {
+        cout << "賬戶： " << s.first << ", 餘額: " << s.second << endl;
+    }
 }
