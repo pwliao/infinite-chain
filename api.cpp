@@ -66,12 +66,12 @@ void APIServer::run(Blockchain &blockchain, int port)
 				} else { // read message
 					memset(input_buffer, 0, sizeof(input_buffer));
 					int len = read(i, input_buffer, sizeof(input_buffer));
-					fprintf(stderr, "input %s\n", input_buffer);
 					if (len == 0) {
 						FD_CLR(i, &reads);
 						close(i);
 						fprintf(stderr, "close connection\n");
 					} else {
+						fprintf(stderr, "input %s\n", input_buffer);
 						string ret = getResponse(input_buffer, blockchain);
 						ret += "\n";
 						write(i, ret.c_str(), ret.length());

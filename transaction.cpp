@@ -49,7 +49,16 @@ void Transaction::partial_hash(unsigned char *hash) {
 }
 
 string Transaction::serialize() {
+	json serialized_tx = json::object();
+    serialized_tx = {
+        {"nonce", this->nonce},
+        {"sender_pub_key", this->sender_pub_key},
+        {"to", this->to},
+        {"value", this->value},
+        {"fee", this->fee},
+        {"signature", this->signature} };
 
+	return serialized_tx.dump();
 }
 
 string Transaction::sign(std::string private_key) {

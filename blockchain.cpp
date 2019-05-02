@@ -226,6 +226,14 @@ void Blockchain::broadcastBlock(Block block)
 	this->neighbors.broadcast(message.dump());
 }
 
+void Blockchain::broadcastTransaction(Transaction tx)
+{
+	json message = json::object();
+	message["data"] = json::parse(tx.serialize());
+	message["method"] = "sendTransaction";
+	this->neighbors.broadcast(message.dump());
+}
+
 void Blockchain::mining()
 {
 	uint32_t nonce = 0;
@@ -261,7 +269,6 @@ void Blockchain::mining()
 				cerr << "new block, height " << block.height << endl;
 				this->broadcastBlock(block);
                 this->addBlock(block);
-                this->showWorldState();
 				break;
 			}
 			nonce++;
@@ -312,6 +319,7 @@ void Blockchain::sendToAddress(std::string address, uint64_t amount) {
     Transaction tx(nonce, this->public_key, address,
             amount, this->fee);
     tx.sign(this->private_key);
+	this->broadcastTransaction(tx);
     this->transaction_pool.push_back(tx);
 }
 
