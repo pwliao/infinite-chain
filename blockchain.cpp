@@ -98,7 +98,8 @@ string Block::serialize()
 	serialized_block["data"]["transactions"] = json::array();
 	serialized_block["height"] = height;
 	for (auto &tx : txs) {
-		serialized_block["data"]["transactions"].push_back(tx.serialize());
+		json json_tx = json::parse(tx.serialize());
+		serialized_block["data"]["transactions"].push_back(json_tx);
 	}
 	return serialized_block.dump();
 }
