@@ -95,10 +95,10 @@ string Block::serialize()
 	serialized_block["data"] = {{"version", headers.version}, {"prev_block", headers.previous_hash},
 		{"transactions_hash", headers.transactions_hash}, {"beneficiary", headers.beneficiary},
 		{"target", headers.target}, {"nonce", headers.nonce}};
-	serialized_block["data"]["transaction"] = json::array();
+	serialized_block["data"]["transactions"] = json::array();
 	serialized_block["height"] = height;
 	for (auto &tx : txs) {
-		serialized_block["data"]["transaction"].push_back(tx.serialize());
+		serialized_block["data"]["transactions"].push_back(tx.serialize());
 	}
 	return serialized_block.dump();
 }
@@ -161,6 +161,10 @@ Blockchain::Blockchain(json config)
 	this->public_key = config["wallet"]["public_key"];
     this->private_key = config["wallet"]["private_key"];
     this->fee = config["fee"];
+    this->neighbors = Neighbors();
+    for (auto n: config["neighbor_list"]) {
+        neighbors.addNeighbor({ n["ip"], n["p2p_port"] });
+    }
 
 	string latest_block;
 	leveldb::Status status = db->Get(leveldb::ReadOptions(), "latest_block", &latest_block);
@@ -187,11 +191,13 @@ void Blockchain::addBlock(Block block)
 	Block previous_block = getBlock(block.headers.previous_hash);
 	string block_hash = block.headers.hash();
 	int latest_block = getBlockCount();
+	block.countWorldState(*this);
 	if (block.height > latest_block) {
 		db->Put(leveldb::WriteOptions(), "latest_block", to_string(block.height));
 		db->Put(leveldb::WriteOptions(), "latest_block_hash", block.headers.hash());
 	}
 	saveBlock(block_hash, block);
+	this->showWorldState();
 }
 
 Block Blockchain::getBlock(string block_hash)
@@ -239,13 +245,8 @@ void Blockchain::mining()
             if (all_txs.find(tx.signature) == all_txs.end() &&
                 world_state[tx.sender_pub_key] >= (tx.fee + tx.value)) {
 
-//                cout << "tx: to " << tx.to << ", amount " << unsigned(tx.value) << endl;
-
                 world_state[tx.sender_pub_key] -= (tx.fee + tx.value);
                 world_state[tx.to] += tx.value;
-
-//                cout << "sender: " << world_state[tx.sender_pub_key] << endl;
-//                cout << "receiver: " << world_state[tx.to] << endl;
 
                 all_txs.insert(tx.signature);
                 block.txs.push_back(tx);
@@ -258,8 +259,7 @@ void Blockchain::mining()
 			block.headers.nonce = nonce;
 			if (block.headers.hash() <= target) {
 				cerr << "new block, height " << block.height << endl;
-//				this->broadcastBlock(block);
-				block.countWorldState(*this);
+				this->broadcastBlock(block);
                 this->addBlock(block);
                 this->showWorldState();
 				break;
@@ -313,4 +313,14 @@ void Blockchain::sendToAddress(std::string address, uint64_t amount) {
             amount, this->fee);
     tx.sign(this->private_key);
     this->transaction_pool.push_back(tx);
+}
+
+bool Blockchain::addRemoteTransaction(std::string tx_str) {
+    Transaction tx(tx_str);
+    if (tx.isValid()) {
+        this->transaction_pool.push_back(tx);
+        return true;
+    } else {
+        return false;
+    }
 }

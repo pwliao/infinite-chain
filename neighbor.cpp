@@ -6,10 +6,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <iostream>
 #include "neighbor.hpp"
+using namespace std;
 
-void Neighbors::broadcast(std::string message)
+void Neighbors::broadcast(string message)
 {
+    cout << "broadcast " << message << endl;
 	for (const Neighbor &neighbor : neighbors) {
 		int fd = socket(PF_INET, SOCK_STREAM, 0);
 

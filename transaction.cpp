@@ -77,7 +77,7 @@ string Transaction::sign(std::string private_key) {
     return ret.str();
 }
 
-bool Transaction::validate() {
+bool Transaction::isValid() {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     this->partial_hash(hash);
 

@@ -75,7 +75,6 @@ struct Blockchain {
 	Neighbors neighbors;
 	std::vector<Transaction> transaction_pool;
 
-	Blockchain() {}
 	Blockchain(nlohmann::json config);
 
 	int getBlockCount();
@@ -89,5 +88,6 @@ struct Blockchain {
 	void showWorldState();
 	Block getLatestBlock();
 	void sendToAddress(std::string address, uint64_t amount);
+	bool addRemoteTransaction(std::string tx_str);
 };
 #endif

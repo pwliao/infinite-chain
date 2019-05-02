@@ -16,7 +16,8 @@ using namespace std;
 
 void APIServer::run(Blockchain &blockchain, int port)
 {
-	char input_buffer[256] = {};
+    // TODO: 不能限制長度
+	char input_buffer[4096] = {};
 	int server_fd = 0, client_fd = 0;
 	server_fd = socket(PF_INET, SOCK_STREAM, 0);
 	if (server_fd == -1) {
@@ -104,7 +105,7 @@ string UserApi::getResponse(string message, Blockchain &blockchain)
             return response.dump();
 		}
 	} catch (exception &e) {
-		fprintf(stderr, "%s\n", e.what());
+		fprintf(stderr, "exception: %s\n", e.what());
 		fprintf(stderr, "getResponse error\n");
 	}
 	return "";
@@ -112,17 +113,18 @@ string UserApi::getResponse(string message, Blockchain &blockchain)
 
 string P2PApi::getResponse(string message, Blockchain &blockchain)
 {
-
 	try {
 		json j = json::parse(message);
 		string method = j["method"];
 		if (method == "sendBlock") {
-			blockchain.addBlock(message);
+			blockchain.addBlock(Block(message));
 		} else if (method == "getBlocks") {
 		} else if (method == "sendTransaction") {
+		    string tx_str = j["data"].dump();
+		    blockchain.addRemoteTransaction(tx_str);
 		}
 	} catch (exception &e) {
-		fprintf(stderr, "%s\n", e.what());
+        fprintf(stderr, "exception: %s\n", e.what());
 		fprintf(stderr, "getResponse error\n");
 	}
 	return "";
