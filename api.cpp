@@ -70,6 +70,8 @@ void APIServer::run(Blockchain &blockchain, int port)
 						FD_CLR(i, &reads);
 						close(i);
 						fprintf(stderr, "close connection\n");
+					} else if (len == -1) {
+						fprintf(stderr, "read error: %s\n", strerror(errno));
 					} else {
 						fprintf(stderr, "input %s\n", input_buffer);
 						string ret = getResponse(input_buffer, blockchain);
