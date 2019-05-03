@@ -42,6 +42,7 @@ struct Block {
 
 	// 會更新 world_state 以及 all_txs
 	bool countWorldState(struct Blockchain &blockchain);
+	std::string calculateTransactionHash();
 
 	BlockHeaders headers;
 	int height;

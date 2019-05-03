@@ -112,7 +112,9 @@ bool Block::isValid(const string &target)
 	if (headers.target != target) {
 		return false;
 	}
-	// TODO check transactions
+	if (headers.transactions_hash != calculateTransactionHash()) {
+		return false;
+	}
 	if (headers.hash() > target) {
 		return false;
 	}
@@ -151,6 +153,24 @@ bool Block::countWorldState(struct Blockchain &blockchain) {
     this->all_txs = all_txs;
     cout << "==================== end count world state =========================" << endl;
     return true;
+}
+
+string Block::calculateTransactionHash()
+{
+	string signature;
+	for (auto &tx: txs) {
+		signature += tx.signature;
+	}
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+	SHA256_CTX sha256;
+	SHA256_Init(&sha256);
+	SHA256_Update(&sha256, signature.c_str(), signature.size());
+	SHA256_Final(hash, &sha256);
+	stringstream ss;
+	for (unsigned char i: hash) {
+		ss << hex << setw(2) << setfill('0') << (int)i;
+	}
+	return ss.str();
 }
 
 Blockchain::Blockchain(json config)
@@ -192,7 +212,13 @@ void Blockchain::addBlock(Block block)
 	Block previous_block = getBlock(block.headers.previous_hash);
 	string block_hash = block.headers.hash();
 	int latest_block = getBlockCount();
-	block.countWorldState(*this);
+	if (!block.countWorldState(*this)) {
+		return;
+	}
+	if (!block.isValid(this->target)) {
+		printf("invalid block\n");
+		return;
+	}
 	if (block.height > latest_block) {
 		db->Put(leveldb::WriteOptions(), "latest_block", to_string(block.height));
 		db->Put(leveldb::WriteOptions(), "latest_block_hash", block.headers.hash());
@@ -262,6 +288,7 @@ void Blockchain::mining()
 
             }
 		}
+		block.headers.transactions_hash = block.calculateTransactionHash();
 
 		int T = 10000;
 		while (T--) {
