@@ -31,14 +31,14 @@ int main()
 	json config = readConfig();
 	Blockchain blockchain(config);
 
-	unsigned int delay = config["delay"];
-	sleep(delay);
-
 	UserApi userapi;
 	P2PApi p2papi;
 	thread user(&APIServer::run, &userapi, ref(blockchain), config["user_port"]);
 	thread p2p(&APIServer::run, &p2papi, ref(blockchain), config["p2p_port"]);
 	printf("api server start\n");
+
+	unsigned int delay = config["delay"];
+	sleep(delay);
 
 	if (config["mining"] == true) {
         printf("mining start\n");
