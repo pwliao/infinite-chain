@@ -3,6 +3,7 @@
 #include <thread>
 #include <iostream>
 #include <fstream>
+#include <unistd.h>
 #include "api.hpp"
 #include "blockchain.hpp"
 #include "json.hpp"
@@ -29,6 +30,9 @@ int main()
 {
 	json config = readConfig();
 	Blockchain blockchain(config);
+
+	unsigned int delay = config["delay"];
+	sleep(delay);
 
 	UserApi userapi;
 	P2PApi p2papi;

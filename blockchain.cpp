@@ -121,38 +121,40 @@ bool Block::isValid(const string &target)
 	return true;
 }
 
-bool Block::countWorldState(struct Blockchain &blockchain) {
-    Block previous_block = blockchain.getBlock(this->headers.previous_hash);
-    map<string, uint64_t> world_state = previous_block.world_state;
-    set<string> all_txs = previous_block.all_txs;
+bool Block::countWorldState(struct Blockchain &blockchain)
+{
+	Block previous_block = blockchain.getBlock(this->headers.previous_hash);
+	map<string, uint64_t> world_state = previous_block.world_state;
+	set<string> all_txs = previous_block.all_txs;
 
-    cout << "==================== start count world state =========================" << endl;
-    cout << "交易數量：" << this->txs.size() << endl;
-    uint64_t all_fee = 0;
-    for (auto &tx: this->txs) {
-        if ( all_txs.find(tx.signature) == all_txs.end() &&
-             world_state[tx.sender_pub_key] >= (tx.fee + tx.value) ) {
+	cout << "==================== start count world state =========================" << endl;
+	cout << "交易數量：" << this->txs.size() << endl;
+	uint64_t all_fee = 0;
+	for (auto &tx : this->txs) {
+		if (tx.isValid() &&
+			all_txs.find(tx.signature) == all_txs.end() &&
+			world_state[tx.sender_pub_key] >= (tx.fee + tx.value))
+		{
 
-            all_fee += tx.fee;
-            world_state[tx.sender_pub_key] -= (tx.fee + tx.value);
-            cout << tx.sender_pub_key << " 減少 " << (tx.fee + tx.value) << endl;
-            world_state[tx.to] += tx.value;
-            cout << tx.to << " 增加 " << ( tx.value) << endl;
+			all_fee += tx.fee;
+			world_state[tx.sender_pub_key] -= (tx.fee + tx.value);
+			cout << tx.sender_pub_key << " 減少 " << (tx.fee + tx.value) << endl;
+			world_state[tx.to] += tx.value;
+			cout << tx.to << " 增加 " << (tx.value) << endl;
 
-            all_txs.insert(tx.signature);
-
-        } else {
-            cout << "==================== fail count world state =========================" << endl;
-            return false;
-        }
-    }
-    // TODO: 將 1000 放到 config.json 或是其他專門放常數的檔案
-    world_state[this->headers.beneficiary] += (1000 + all_fee);
-    cout << this->headers.beneficiary << " 礦工獲得手續費 " << all_fee << " 以及挖礦獎勵 " << 1000 << endl;
-    this->world_state = world_state;
-    this->all_txs = all_txs;
-    cout << "==================== end count world state =========================" << endl;
-    return true;
+			all_txs.insert(tx.signature);
+		} else {
+			cout << "==================== fail count world state =========================" << endl;
+			return false;
+		}
+	}
+	// TODO: 將 1000 放到 config.json 或是其他專門放常數的檔案
+	world_state[this->headers.beneficiary] += (1000 + all_fee);
+	cout << this->headers.beneficiary << " 礦工獲得手續費 " << all_fee << " 以及挖礦獎勵 " << 1000 << endl;
+	this->world_state = world_state;
+	this->all_txs = all_txs;
+	cout << "==================== end count world state =========================" << endl;
+	return true;
 }
 
 string Block::calculateTransactionHash()
