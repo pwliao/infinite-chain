@@ -209,17 +209,17 @@ int Blockchain::getBlockCount()
 	return stoi(latest_block);
 }
 
-void Blockchain::addBlock(Block block)
+bool Blockchain::addBlock(Block block)
 {
 	Block previous_block = getBlock(block.headers.previous_hash);
 	string block_hash = block.headers.hash();
 	int latest_block = getBlockCount();
 	if (!block.countWorldState(*this)) {
-		return;
+		return false;
 	}
 	if (!block.isValid(this->target)) {
 		printf("invalid block\n");
-		return;
+		return false;
 	}
 	if (block.height > latest_block) {
 		db->Put(leveldb::WriteOptions(), "latest_block", to_string(block.height));
@@ -227,6 +227,7 @@ void Blockchain::addBlock(Block block)
 	}
 	saveBlock(block_hash, block);
 	this->showWorldState();
+	return true;
 }
 
 Block Blockchain::getBlock(string block_hash)

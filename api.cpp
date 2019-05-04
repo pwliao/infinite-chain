@@ -96,15 +96,15 @@ string UserApi::getResponse(string message, Blockchain &blockchain)
 		} else if (method == "getBlockHash") {
 		} else if (method == "getBlockHeader") {
 		} else if (method == "getbalance") {
-		    json response;
-		    response["error"] = "";
-		    response["balance"] = blockchain.getBalance(j["data"]["address"]);
-		    return response.dump();
+			json response;
+			response["error"] = 0;
+			response["balance"] = blockchain.getBalance(j["data"]["address"]);
+			return response.dump();
 		} else if (method == "sendtoaddress") {
-		    blockchain.sendToAddress(j["data"]["address"], j["data"]["amount"]);
-            json response;
-            response["error"] = "";
-            return response.dump();
+			blockchain.sendToAddress(j["data"]["address"], j["data"]["amount"]);
+			json response;
+			response["error"] = 0;
+			return response.dump();
 		}
 	} catch (exception &e) {
 		fprintf(stderr, "exception: %s\n", e.what());
@@ -119,14 +119,26 @@ string P2PApi::getResponse(string message, Blockchain &blockchain)
 		json j = json::parse(message);
 		string method = j["method"];
 		if (method == "sendBlock") {
-			blockchain.addBlock(Block(message));
+			json response;
+			if (blockchain.addBlock(Block(message))) {
+				response["error"] = 0;
+			} else {
+				response["error"] = 1;
+			}
+			return response.dump();
 		} else if (method == "getBlocks") {
 		} else if (method == "sendTransaction") {
-		    string tx_str = j["data"].dump();
-		    blockchain.addRemoteTransaction(tx_str);
+			json response;
+			string tx_str = j["data"].dump();
+			if (blockchain.addRemoteTransaction(tx_str)) {
+				response["error"] = 0;
+			} else {
+				response["error"] = 1;
+			}
+			return response.dump();
 		}
 	} catch (exception &e) {
-        fprintf(stderr, "exception: %s\n", e.what());
+		fprintf(stderr, "exception: %s\n", e.what());
 		fprintf(stderr, "getResponse error\n");
 	}
 	return "";

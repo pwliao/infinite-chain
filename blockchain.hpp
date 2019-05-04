@@ -81,7 +81,7 @@ struct Blockchain {
 	int getBlockCount();
 	void broadcastBlock(Block block);
 	void broadcastTransaction(Transaction tx);
-	void addBlock(Block block);
+	bool addBlock(Block block);
 	void saveBlock(std::string hash, Block block);
 	Block getBlock(std::string block_hash);
 	void mining();
