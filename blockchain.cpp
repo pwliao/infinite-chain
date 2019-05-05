@@ -271,7 +271,7 @@ void Blockchain::mining()
 		Block block;
 		string latest_block_hash;
 		db->Get(leveldb::ReadOptions(), "latest_block_hash", &latest_block_hash);
-        Block previous_block = this->getLatestBlock();
+        Block previous_block = this->getBlock(latest_block_hash);
 		block.headers = BlockHeaders(2, latest_block_hash,
 				block.getMerkleRoot(), target, beneficiary, nonce);
 		block.height = previous_block.height + 1;
