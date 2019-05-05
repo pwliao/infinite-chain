@@ -4,16 +4,17 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "transaction.hpp"
-#include "neighbor.hpp"
-#include <leveldb/db.h>
+#include <mutex>
 #include <map>
 #include <set>
+#include <leveldb/db.h>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/set.hpp>
 #include <boost/serialization/string.hpp>
 #include "json.hpp"
+#include "transaction.hpp"
+#include "neighbor.hpp"
 
 struct BlockHeaders {
 	uint32_t version;
@@ -75,6 +76,9 @@ struct Blockchain {
 	leveldb::DB* db;
 	Neighbors neighbors;
 	std::vector<Transaction> transaction_pool;
+
+	std::mutex tx_pool_mutex;
+	std::mutex add_block_mutex;
 
 	Blockchain(nlohmann::json config);
 

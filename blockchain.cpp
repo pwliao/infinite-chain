@@ -211,6 +211,7 @@ int Blockchain::getBlockCount()
 
 bool Blockchain::addBlock(Block block)
 {
+	this->add_block_mutex.lock();
 	Block previous_block = getBlock(block.headers.previous_hash);
 	string block_hash = block.headers.hash();
 	int latest_block = getBlockCount();
@@ -227,6 +228,7 @@ bool Blockchain::addBlock(Block block)
 	}
 	saveBlock(block_hash, block);
 	this->showWorldState();
+	this->add_block_mutex.unlock();
 	return true;
 }
 
@@ -279,6 +281,7 @@ void Blockchain::mining()
 //		加入交易
 		auto world_state = previous_block.world_state;
         auto all_txs = previous_block.all_txs;
+		this->tx_pool_mutex.lock();
 		for (Transaction tx: this->transaction_pool) {
             if (all_txs.find(tx.signature) == all_txs.end() &&
                 world_state[tx.sender_pub_key] >= (tx.fee + tx.value)) {
@@ -291,6 +294,7 @@ void Blockchain::mining()
 
             }
 		}
+		this->tx_pool_mutex.unlock();
 		block.headers.transactions_hash = block.calculateTransactionHash();
 
 		int T = 10000;
@@ -351,13 +355,17 @@ void Blockchain::sendToAddress(std::string address, uint64_t amount) {
             amount, this->fee);
     tx.sign(this->private_key);
 	this->broadcastTransaction(tx);
+	this->tx_pool_mutex.lock();
     this->transaction_pool.push_back(tx);
+	this->tx_pool_mutex.unlock();
 }
 
 bool Blockchain::addRemoteTransaction(std::string tx_str) {
     Transaction tx(tx_str);
     if (tx.isValid()) {
+    	this->tx_pool_mutex.lock();
         this->transaction_pool.push_back(tx);
+		this->tx_pool_mutex.unlock();
         return true;
     } else {
         return false;
