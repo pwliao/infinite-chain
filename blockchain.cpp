@@ -83,11 +83,6 @@ Block::Block(string serialized_block)
 	}
 }
 
-string Block::getMerkleRoot()
-{
-	return "0000000000000000000000000000000000000000000000000000000000000000";
-}
-
 string Block::serialize()
 {
 	json serialized_block;
@@ -275,7 +270,7 @@ void Blockchain::mining()
 		db->Get(leveldb::ReadOptions(), "latest_block_hash", &latest_block_hash);
         Block previous_block = this->getBlock(latest_block_hash);
 		block.headers = BlockHeaders(2, latest_block_hash,
-				block.getMerkleRoot(), target, beneficiary, nonce);
+				"", target, beneficiary, nonce);
 		block.height = previous_block.height + 1;
 
 //		加入交易

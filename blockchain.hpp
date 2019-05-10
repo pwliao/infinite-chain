@@ -37,7 +37,6 @@ struct BlockHeaders {
 struct Block {
 	Block() {}
 	Block(std::string serialized_block);
-	std::string getMerkleRoot();
 	std::string serialize();
 	bool isValid(const std::string &target);
 
