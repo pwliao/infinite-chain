@@ -25,10 +25,10 @@ struct BlockHeaders {
 	uint32_t nonce;
 	BlockHeaders();
 	BlockHeaders(uint32_t version
-			, std::string previous_hash
-			, std::string transactions_hash
-			, std::string target, std::string beneficiay
-			, uint32_t);
+				 , std::string previous_hash
+				 , std::string transactions_hash
+				 , std::string target, std::string beneficiay
+				 , uint32_t);
 	BlockHeaders(std::string serialized_headers);
 	std::string serialize();
 	std::string hash();

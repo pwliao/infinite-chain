@@ -41,8 +41,8 @@ int main()
 	sleep(delay);
 
 	if (config["mining"] == true) {
-        printf("mining start\n");
-        blockchain.mining();
+		printf("mining start\n");
+		blockchain.mining();
 	}
 
 	user.join();

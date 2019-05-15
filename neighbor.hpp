@@ -9,7 +9,8 @@ struct Neighbor {
 	int port;
 };
 
-class Neighbors {
+class Neighbors
+{
 public:
 	void broadcast(std::string message);
 	void addNeighbor(Neighbor neighbor);

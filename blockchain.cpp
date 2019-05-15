@@ -29,7 +29,7 @@ BlockHeaders::BlockHeaders(string serialized_headers)
 }
 
 BlockHeaders::BlockHeaders(uint32_t version, string previous_hash,
-		string transactions_hash, string target, string beneficiary, uint32_t nonce)
+						   string transactions_hash, string target, string beneficiary, uint32_t nonce)
 {
 	this->version = version;
 	this->previous_hash = previous_hash;
@@ -77,9 +77,9 @@ Block::Block(string serialized_block)
 	headers.nonce = data["nonce"];
 	height = j["height"];
 
-	for (auto &tx_json: data["transactions"]) {
-	    Transaction tx(tx_json.dump());
-	    txs.push_back(tx);
+	for (auto &tx_json : data["transactions"]) {
+		Transaction tx(tx_json.dump());
+		txs.push_back(tx);
 	}
 }
 
@@ -89,7 +89,8 @@ string Block::serialize()
 	serialized_block["data"] = json::object();
 	serialized_block["data"] = {{"version", headers.version}, {"prev_block", headers.previous_hash},
 		{"transactions_hash", headers.transactions_hash}, {"beneficiary", headers.beneficiary},
-		{"target", headers.target}, {"nonce", headers.nonce}};
+		{"target", headers.target}, {"nonce", headers.nonce}
+	};
 	serialized_block["data"]["transactions"] = json::array();
 	serialized_block["height"] = height;
 	for (auto &tx : txs) {
@@ -127,9 +128,8 @@ bool Block::countWorldState(struct Blockchain &blockchain)
 	uint64_t all_fee = 0;
 	for (auto &tx : this->txs) {
 		if (tx.isValid() &&
-			all_txs.find(tx.signature) == all_txs.end() &&
-			world_state[tx.sender_pub_key] >= (tx.fee + tx.value))
-		{
+				all_txs.find(tx.signature) == all_txs.end() &&
+				world_state[tx.sender_pub_key] >= (tx.fee + tx.value)) {
 
 			all_fee += tx.fee;
 			world_state[tx.sender_pub_key] -= (tx.fee + tx.value);
@@ -155,7 +155,7 @@ bool Block::countWorldState(struct Blockchain &blockchain)
 string Block::calculateTransactionHash()
 {
 	string signature;
-	for (auto &tx: txs) {
+	for (auto &tx : txs) {
 		signature += tx.signature;
 	}
 	unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -164,7 +164,7 @@ string Block::calculateTransactionHash()
 	SHA256_Update(&sha256, signature.c_str(), signature.size());
 	SHA256_Final(hash, &sha256);
 	stringstream ss;
-	for (unsigned char i: hash) {
+	for (unsigned char i : hash) {
 		ss << hex << setw(2) << setfill('0') << (int)i;
 	}
 	return ss.str();
@@ -177,19 +177,19 @@ Blockchain::Blockchain(json config)
 	this->target = config["target"];
 	this->beneficiary = config["beneficiary"];
 	this->public_key = config["wallet"]["public_key"];
-    this->private_key = config["wallet"]["private_key"];
-    this->fee = config["fee"];
-    this->neighbors = Neighbors();
-    for (auto n: config["neighbor_list"]) {
-        neighbors.addNeighbor({ n["ip"], n["p2p_port"] });
-    }
+	this->private_key = config["wallet"]["private_key"];
+	this->fee = config["fee"];
+	this->neighbors = Neighbors();
+	for (auto n : config["neighbor_list"]) {
+		neighbors.addNeighbor({ n["ip"], n["p2p_port"] });
+	}
 
 	string latest_block;
 	leveldb::Status status = db->Get(leveldb::ReadOptions(), "latest_block", &latest_block);
 	if (!status.ok()) {
 		db->Put(leveldb::WriteOptions(), "latest_block_hash", zero);
 		db->Put(leveldb::WriteOptions(), "latest_block", "-1");
-        db->Put(leveldb::WriteOptions(), "nonce", "0");
+		db->Put(leveldb::WriteOptions(), "nonce", "0");
 	}
 	Block block;
 	block.height = -1;
@@ -268,26 +268,26 @@ void Blockchain::mining()
 		Block block;
 		string latest_block_hash;
 		db->Get(leveldb::ReadOptions(), "latest_block_hash", &latest_block_hash);
-        Block previous_block = this->getBlock(latest_block_hash);
+		Block previous_block = this->getBlock(latest_block_hash);
 		block.headers = BlockHeaders(2, latest_block_hash,
-				"", target, beneficiary, nonce);
+									 "", target, beneficiary, nonce);
 		block.height = previous_block.height + 1;
 
 //		加入交易
 		auto world_state = previous_block.world_state;
-        auto all_txs = previous_block.all_txs;
+		auto all_txs = previous_block.all_txs;
 		this->tx_pool_mutex.lock();
-		for (Transaction tx: this->transaction_pool) {
-            if (all_txs.find(tx.signature) == all_txs.end() &&
-                world_state[tx.sender_pub_key] >= (tx.fee + tx.value)) {
+		for (Transaction tx : this->transaction_pool) {
+			if (all_txs.find(tx.signature) == all_txs.end() &&
+					world_state[tx.sender_pub_key] >= (tx.fee + tx.value)) {
 
-                world_state[tx.sender_pub_key] -= (tx.fee + tx.value);
-                world_state[tx.to] += tx.value;
+				world_state[tx.sender_pub_key] -= (tx.fee + tx.value);
+				world_state[tx.to] += tx.value;
 
-                all_txs.insert(tx.signature);
-                block.txs.push_back(tx);
+				all_txs.insert(tx.signature);
+				block.txs.push_back(tx);
 
-            }
+			}
 		}
 		this->tx_pool_mutex.unlock();
 		block.headers.transactions_hash = block.calculateTransactionHash();
@@ -298,7 +298,7 @@ void Blockchain::mining()
 			if (block.headers.hash() <= target) {
 				cerr << "new block, height " << block.height << endl;
 				this->broadcastBlock(block);
-                this->addBlock(block);
+				this->addBlock(block);
 				break;
 			}
 			nonce++;
@@ -314,12 +314,13 @@ void Blockchain::initDb()
 	assert(status.ok());
 }
 
-unsigned int Blockchain::getBalance(std::string address) {
-    Block b = this->getLatestBlock();
-    b = this->getBlock(b.headers.previous_hash);
-    b = this->getBlock(b.headers.previous_hash);
+unsigned int Blockchain::getBalance(std::string address)
+{
+	Block b = this->getLatestBlock();
+	b = this->getBlock(b.headers.previous_hash);
+	b = this->getBlock(b.headers.previous_hash);
 
-    return b.world_state[address];
+	return b.world_state[address];
 }
 
 Block Blockchain::getLatestBlock()
@@ -329,40 +330,43 @@ Block Blockchain::getLatestBlock()
 	return getBlock(latest_block_hash);
 }
 
-void Blockchain::showWorldState() {
-    Block b = this->getLatestBlock();
-    b = this->getBlock(b.headers.previous_hash);
-    b = this->getBlock(b.headers.previous_hash);
+void Blockchain::showWorldState()
+{
+	Block b = this->getLatestBlock();
+	b = this->getBlock(b.headers.previous_hash);
+	b = this->getBlock(b.headers.previous_hash);
 
-    cout << "show world state" << endl;
-    auto world_state = b.world_state;
-    for (auto s: world_state) {
-        cout << "賬戶： " << s.first << ", 餘額: " << s.second << endl;
-    }
+	cout << "show world state" << endl;
+	auto world_state = b.world_state;
+	for (auto s : world_state) {
+		cout << "賬戶： " << s.first << ", 餘額: " << s.second << endl;
+	}
 }
 
-void Blockchain::sendToAddress(std::string address, uint64_t amount) {
-    string nonce_str;
-    db->Get(leveldb::ReadOptions(), "nonce", &nonce_str);
-    int nonce = stoi(nonce_str);
-    db->Put(leveldb::WriteOptions(), "nonce", to_string(nonce + 1));
-    Transaction tx(nonce, this->public_key, address,
-            amount, this->fee);
-    tx.sign(this->private_key);
+void Blockchain::sendToAddress(std::string address, uint64_t amount)
+{
+	string nonce_str;
+	db->Get(leveldb::ReadOptions(), "nonce", &nonce_str);
+	int nonce = stoi(nonce_str);
+	db->Put(leveldb::WriteOptions(), "nonce", to_string(nonce + 1));
+	Transaction tx(nonce, this->public_key, address,
+				   amount, this->fee);
+	tx.sign(this->private_key);
 	this->broadcastTransaction(tx);
 	this->tx_pool_mutex.lock();
-    this->transaction_pool.push_back(tx);
+	this->transaction_pool.push_back(tx);
 	this->tx_pool_mutex.unlock();
 }
 
-bool Blockchain::addRemoteTransaction(std::string tx_str) {
-    Transaction tx(tx_str);
-    if (tx.isValid()) {
-    	this->tx_pool_mutex.lock();
-        this->transaction_pool.push_back(tx);
+bool Blockchain::addRemoteTransaction(std::string tx_str)
+{
+	Transaction tx(tx_str);
+	if (tx.isValid()) {
+		this->tx_pool_mutex.lock();
+		this->transaction_pool.push_back(tx);
 		this->tx_pool_mutex.unlock();
-        return true;
-    } else {
-        return false;
-    }
+		return true;
+	} else {
+		return false;
+	}
 }

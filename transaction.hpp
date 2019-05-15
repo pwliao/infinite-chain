@@ -16,7 +16,7 @@ public:
 	std::string sign(std::string private_key); // 其它欄位都搞定的狀況下填入 signature
 	bool isValid();
 
-    void partial_hash(unsigned char *hash);
+	void partial_hash(unsigned char *hash);
 	uint64_t nonce;
 	std::string sender_pub_key;
 	std::string to;
