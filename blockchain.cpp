@@ -206,7 +206,7 @@ int Blockchain::getBlockCount()
 
 bool Blockchain::addBlock(Block block)
 {
-	this->add_block_mutex.lock();
+	lock_guard<std::mutex> lock(this->add_block_mutex);
 	Block previous_block = getBlock(block.headers.previous_hash);
 	string block_hash = block.headers.hash();
 	int latest_block = getBlockCount();
@@ -223,7 +223,6 @@ bool Blockchain::addBlock(Block block)
 	}
 	saveBlock(block_hash, block);
 	this->showWorldState();
-	this->add_block_mutex.unlock();
 	return true;
 }
 
