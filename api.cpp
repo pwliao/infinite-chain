@@ -109,6 +109,9 @@ string UserApi::getResponse(string message, Blockchain &blockchain)
 	} catch (exception &e) {
 		fprintf(stderr, "exception: %s\n", e.what());
 		fprintf(stderr, "getResponse error\n");
+		json response;
+		response["error"] = 1;
+		return response.dump();
 	}
 	return "";
 }
@@ -140,6 +143,9 @@ string P2PApi::getResponse(string message, Blockchain &blockchain)
 	} catch (exception &e) {
 		fprintf(stderr, "exception: %s\n", e.what());
 		fprintf(stderr, "getResponse error\n");
+		json response;
+		response["error"] = 1;
+		return response.dump();
 	}
 	return "";
 }

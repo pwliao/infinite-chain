@@ -207,7 +207,12 @@ int Blockchain::getBlockCount()
 bool Blockchain::addBlock(Block block)
 {
 	lock_guard<std::mutex> lock(this->add_block_mutex);
-	Block previous_block = getBlock(block.headers.previous_hash);
+	try {
+		Block previous_block = getBlock(block.headers.previous_hash);
+	} catch (exception &e) {
+		printf("addBlock error\n");
+		return false;
+	}
 	string block_hash = block.headers.hash();
 	int latest_block = getBlockCount();
 	if (!block.countWorldState(*this)) {
@@ -230,6 +235,9 @@ Block Blockchain::getBlock(string block_hash)
 {
 	string serialized_block;
 	leveldb::Status s = db->Get(leveldb::ReadOptions(), block_hash, &serialized_block);
+	if (!s.ok()) {
+		throw "block not found";
+	}
 	Block block;
 	istringstream is(serialized_block);
 	boost::archive::binary_iarchive ia(is);
