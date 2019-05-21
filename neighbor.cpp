@@ -12,13 +12,13 @@ using namespace std;
 
 void Neighbors::broadcast(string message)
 {
-	cout << "broadcast " << message << endl;
+	cout << "廣播 " << message << endl;
 	for (const Neighbor &neighbor : neighbors) {
 		int fd = socket(PF_INET, SOCK_STREAM, 0);
 
 		if (fd == -1) {
 			printf("socket() error\n");
-			exit(1);
+			continue;
 		}
 		struct sockaddr_in info;
 		memset(&info, 0, sizeof(info));
@@ -27,9 +27,10 @@ void Neighbors::broadcast(string message)
 		info.sin_addr.s_addr = inet_addr(neighbor.ip.c_str());
 		info.sin_port = htons(neighbor.port);
 		if (connect(fd, (struct sockaddr *)&info, sizeof(info)) == -1) {
-			printf("connect error\n");
+			printf("\033[0;32;31m連線至 %s:%d 錯誤\033[m\n", neighbor.ip.c_str(), neighbor.port);
+		} else {
+			send(fd, message.c_str(), message.length(), 0);
 		}
-		send(fd, message.c_str(), message.length(), 0);
 		close(fd);
 	}
 }

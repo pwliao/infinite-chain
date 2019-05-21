@@ -123,8 +123,8 @@ bool Block::countWorldState(struct Blockchain &blockchain)
 	map<string, uint64_t> world_state = previous_block.world_state;
 	set<string> all_txs = previous_block.all_txs;
 
-	cout << "==================== start count world state =========================" << endl;
-	cout << "交易數量：" << this->txs.size() << endl;
+	// cout << "==================== start count world state =========================" << endl;
+	// cout << "交易數量：" << this->txs.size() << endl;
 	uint64_t all_fee = 0;
 	for (auto &tx : this->txs) {
 		if (tx.isValid() &&
@@ -133,22 +133,22 @@ bool Block::countWorldState(struct Blockchain &blockchain)
 
 			all_fee += tx.fee;
 			world_state[tx.sender_pub_key] -= (tx.fee + tx.value);
-			cout << tx.sender_pub_key << " 減少 " << (tx.fee + tx.value) << endl;
+			// cout << tx.sender_pub_key << " 減少 " << (tx.fee + tx.value) << endl;
 			world_state[tx.to] += tx.value;
-			cout << tx.to << " 增加 " << (tx.value) << endl;
+			// cout << tx.to << " 增加 " << (tx.value) << endl;
 
 			all_txs.insert(tx.signature);
 		} else {
-			cout << "==================== fail count world state =========================" << endl;
+			// cout << "==================== fail count world state =========================" << endl;
 			return false;
 		}
 	}
 	// TODO: 將 1000 放到 config.json 或是其他專門放常數的檔案
 	world_state[this->headers.beneficiary] += (1000 + all_fee);
-	cout << this->headers.beneficiary << " 礦工獲得手續費 " << all_fee << " 以及挖礦獎勵 " << 1000 << endl;
+	// cout << this->headers.beneficiary << " 礦工獲得手續費 " << all_fee << " 以及挖礦獎勵 " << 1000 << endl;
 	this->world_state = world_state;
 	this->all_txs = all_txs;
-	cout << "==================== end count world state =========================" << endl;
+	// cout << "==================== end count world state =========================" << endl;
 	return true;
 }
 
@@ -303,9 +303,12 @@ void Blockchain::mining()
 		while (T--) {
 			block.headers.nonce = nonce;
 			if (block.headers.hash() <= target) {
-				cerr << "new block, height " << block.height << endl;
-				this->broadcastBlock(block);
+				cerr << "######## 新區塊, 高度" << block.height << endl;
+				cout << "\n";
 				this->addBlock(block);
+				cout << "\n";
+				this->broadcastBlock(block);
+				cout << "\n\n";
 				break;
 			}
 			nonce++;
@@ -343,7 +346,7 @@ void Blockchain::showWorldState()
 	b = this->getBlock(b.headers.previous_hash);
 	b = this->getBlock(b.headers.previous_hash);
 
-	cout << "show world state" << endl;
+	// cout << "show world state" << endl;
 	auto world_state = b.world_state;
 	for (auto s : world_state) {
 		cout << "賬戶： " << s.first << ", 餘額: " << s.second << endl;

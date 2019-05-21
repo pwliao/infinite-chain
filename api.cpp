@@ -4,6 +4,9 @@
 #include <unistd.h>
 #include <iostream>
 #include <sstream>
+#include <map>
+#include <string>
+#include <utility>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -16,8 +19,9 @@ using namespace std;
 
 void APIServer::run(Blockchain &blockchain, int port)
 {
-	// TODO: 不能限制長度
 	char input_buffer[4096] = {};
+	map<int, string> buffer;
+	map<int, pair<int,int>> brackets_count;
 	int server_fd = 0, client_fd = 0;
 	server_fd = socket(PF_INET, SOCK_STREAM, 0);
 	if (server_fd == -1) {
@@ -62,21 +66,38 @@ void APIServer::run(Blockchain &blockchain, int port)
 					if (fd_max < client_fd) {
 						fd_max = client_fd;
 					}
-					fprintf(stderr, "new connection\n");
+					fprintf(stderr, "新連線\n");
 				} else { // read message
 					memset(input_buffer, 0, sizeof(input_buffer));
 					int len = read(i, input_buffer, sizeof(input_buffer));
 					if (len == 0) {
 						FD_CLR(i, &reads);
 						close(i);
-						fprintf(stderr, "close connection\n");
+						fprintf(stderr, "關閉連線\n");
+						buffer.erase(i);
 					} else if (len == -1) {
 						fprintf(stderr, "read error: %s\n", strerror(errno));
 					} else {
-						fprintf(stderr, "input %s\n", input_buffer);
-						string ret = getResponse(input_buffer, blockchain);
-						ret += "\n";
-						write(i, ret.c_str(), ret.length());
+						fprintf(stderr, "收到請求 %s\n", input_buffer);
+						int start_pos = 0;
+						for (int j = 0; j < len; j++) {
+							if (input_buffer[j] == '{') {
+								brackets_count[i].first++;
+							} else if (input_buffer[j] == '}') {
+								brackets_count[i].second++;
+							}
+							if (brackets_count[i].first == brackets_count[i].second
+									&& brackets_count[i].first != 0) {
+								buffer[i] += string(input_buffer).substr(start_pos, j - start_pos + 1);
+								start_pos = j + 1;
+								brackets_count[i] = make_pair(0, 0);
+								string ret = getResponse(buffer[i], blockchain);
+								ret += "\n";
+								write(i, ret.c_str(), ret.length());
+								buffer[i] = "";
+							}
+						}
+						buffer[i] += string(input_buffer).substr(start_pos, len - start_pos + 1);
 					}
 				}
 			}
