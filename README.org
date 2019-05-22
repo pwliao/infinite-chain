@@ -21,3 +21,8 @@
 #+begin_src sh
   make run
 #+end_src
+
+清理 DB （將區塊記錄刪除）
+#+begin_src sh
+  make clean
+#+end_src
