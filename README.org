@@ -1,6 +1,6 @@
-* 台大 2019 春 區塊鏈導論作業 3
+* 台大 2019 春 區塊鏈導論作業 3 助教節點
 ** 準備
-需要安裝 [[https://gcc.gnu.org/][GCC]], [[https://www.openssl.org/][OpenSSL]], [[https://github.com/google/leveldb][LevelDB]], [[https://www.boost.org/][Boost]] ，這些資工系工作站都已經有安裝。
+依賴於 [[https://gcc.gnu.org/][GCC]], [[https://www.openssl.org/][OpenSSL]], [[https://github.com/google/leveldb][LevelDB]], [[https://www.boost.org/][Boost]] ，這些資工系工作站都已經有安裝，但若自行假設環境，需要自己安裝。
 ** 執行
 下載源碼
 #+begin_src sh
