@@ -1,0 +1,23 @@
+* 台大 2019 春 區塊鏈導論作業 3
+** 準備
+需要安裝 [[https://gcc.gnu.org/][GCC]], [[https://www.openssl.org/][OpenSSL]], [[https://github.com/google/leveldb][LevelDB]], [[https://www.boost.org/][Boost]] ，這些資工系工作站都已經有安裝。
+** 執行
+下載源碼
+#+begin_src sh
+  git clone https://github.com/pwliao/infinite-chain
+#+end_src
+
+進入目錄
+#+begin_src sh
+  cd infinite-chain
+#+end_src
+
+編譯
+#+begin_src sh
+  make
+#+end_src
+
+執行
+#+begin_src sh
+  make run
+#+end_src
