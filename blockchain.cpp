@@ -47,6 +47,7 @@ string BlockHeaders::serialize()
 	ss << transactions_hash;
 	ss << target;
 	ss << hex << setw(8) << setfill('0') << nonce;
+	ss << beneficiary;
 	return ss.str();
 }
 
